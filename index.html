@@ -137,6 +137,35 @@ footer a{color:var(--chispa)}
 footer .sig{font-family:"Bungee",sans-serif;color:var(--chispa);font-size:1.05rem;line-height:1.35;margin-bottom:.8rem}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.sign{transform:none}}
+
+/* regions map (v14) */
+.rm-btn{margin-top:1rem;background:transparent;color:var(--chispa);border:2px solid var(--chispa);border-radius:999px;padding:.5rem 1.1rem;font:inherit;font-size:1rem;font-weight:700;cursor:pointer;min-height:44px}
+.rm-btn:hover{background:var(--chispa);color:var(--negro)}
+#rm{margin:auto;border:0;background:var(--negro);color:var(--hueso);border-radius:22px;width:min(1040px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:0;box-shadow:0 0 0 2px var(--negro2)}
+#rm::backdrop{background:rgba(10,9,12,.8)}
+#rm .rm-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1.4rem 1.6rem .4rem}
+#rm h2{font-size:1.7rem;font-weight:800;line-height:1.15}
+#rm .rm-x{background:var(--negro2);color:var(--hueso);border:0;border-radius:999px;width:44px;height:44px;font-size:1.4rem;cursor:pointer;flex:none}
+#rm .rm-sub{padding:0 1.6rem;opacity:.85;font-size:1rem}
+#rm .rm-body{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:1.6rem;padding:1.2rem 1.6rem 1.8rem}
+#rm .rm-map svg{width:100%;height:auto;display:block}
+#rm .hex{cursor:pointer;transition:opacity .15s}
+#rm .hex text{font-size:10.5px;font-weight:700;pointer-events:none;font-family:"Bricolage Grotesque",sans-serif}
+#rm .dim .hex{opacity:.45}#rm .dim .hex.on{opacity:1}
+#rm .rm-legend{list-style:none;display:flex;flex-direction:column;gap:.45rem;margin:0;padding:0}
+#rm .rm-legend button{width:100%;text-align:left;display:flex;gap:.7rem;align-items:center;background:var(--negro2);color:var(--hueso);border:2px solid transparent;border-radius:12px;padding:.55rem .8rem;font:inherit;font-size:1rem;font-weight:600;cursor:pointer;min-height:44px}
+#rm .rm-legend button[aria-pressed="true"]{border-color:var(--hueso)}
+#rm .sw{width:18px;height:18px;border-radius:5px;flex:none}
+#rm .soon{font-weight:400;opacity:.7;margin-left:auto;font-size:.85rem}
+#rm .rm-detail{margin-top:1rem;background:var(--negro2);border-radius:16px;padding:1.1rem 1.2rem;min-height:170px;font-size:1rem}
+#rm .rm-detail h3{font-size:1.25rem;font-weight:800}
+#rm .rm-detail .states{font-size:.9rem;opacity:.8;margin:.15rem 0 .6rem}
+#rm .rm-detail dl{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;margin-top:.6rem}
+#rm .rm-detail dt{font-weight:800;color:var(--chispa)}
+#rm .rm-detail dd{margin:0}
+#rm .rm-detail .proud{margin-top:.7rem;font-size:.9rem}
+#rm .rm-detail .proud b{color:var(--cempa)}
+@media (max-width:760px){#rm .rm-body{grid-template-columns:1fr}#rm h2{font-size:1.35rem}}
 </style>
 </head>
 <body>
@@ -282,8 +311,8 @@ footer .sig{font-family:"Bungee",sans-serif;color:var(--chispa);font-size:1.05re
           <li class="card"><h3>Slang</h3><p>What your primos are saying right now, and when not to say it.</p></li>
           <li class="card"><h3>Culture and history</h3><p>The stories behind the words, from Nahuatl and Zapotec to the street.</p></li>
           <li class="card"><h3>Real conversations</h3><p>The taquería, the family party, meeting the in-laws.</p></li>
-          <li class="card"><h3>Regional Spanish</h3><p>How people talk in CDMX, Oaxaca, el Norte and SoCal.</p></li>
-          <li class="card"><h3>Spanglish</h3><p>When and how people mix the two, and how to do it naturally.</p></li>
+          <li class="card"><h3>Regional Spanish</h3><p>How people talk across Mexico, from Monterrey to Yucatán, and in the US.</p><button class="rm-btn" type="button" id="rm-open">See the map</button></li>
+          <li class="card"><h3>Spanglish</h3><p>When and how people mix Spanish and English, and how to do it naturally.</p></li>
       </ul>
     </div>
   </section>
@@ -359,5 +388,82 @@ prev.addEventListener('click',()=>track.scrollBy({left:-step()}));
 next.addEventListener('click',()=>track.scrollBy({left:step()}));
 track.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);upd();
 </script>
+<dialog id="rm" aria-labelledby="rm-title">
+  <div class="rm-head">
+    <h2 id="rm-title">Every corner of Mexico talks different</h2>
+    <button class="rm-x" id="rm-close" type="button" aria-label="Close map">×</button>
+  </div>
+  <p class="rm-sub">All 32 states, grouped by how they talk. Tap a region or your state.</p>
+  <div class="rm-body">
+    <div class="rm-map" id="rm-map"></div>
+    <div>
+      <ul class="rm-legend" id="rm-legend"></ul>
+      <div class="rm-detail" id="rm-detail" aria-live="polite"></div>
+    </div>
+  </div>
+</dialog>
+<script>(()=>{
+const Z = {
+  us:{name:"Mexican-American Spanish (the US)",color:"#FFF6E6",text:"#1B1A1F",states:"California, Texas, Illinois, Arizona and everywhere la familia landed",
+      blurb:"Spanish that crossed the border and picked up English along the way.",
+      words:[["troca","truck"],["parquear","to park"]],proud:"Mexican-American, Mexicano, Chicano"},
+  norte:{name:"El Norte",color:"#FF8C1A",text:"#1B1A1F",
+      blurb:"Norteño accent, ranch roots and the slang of corridos.",
+      words:[["plebe","the crew, the kids"],["morra","girl"]],proud:"regio, culichi, lagunero"},
+  occ:{name:"Occidente",color:"#E0187A",text:"#FFFFFF",
+      blurb:"Mariachi and tequila country, with its own food words.",
+      words:[["birote","Guadalajara's crusty bread"],["tejuino","cold fermented-corn drink"]],proud:"tapatío"},
+  centro:{name:"El Centro",color:"#FFD23F",text:"#1B1A1F",
+      blurb:"Chilango slang that the whole country ends up using.",
+      words:[["neta","for real, the truth"],["chido","cool"]],proud:"chilango"},
+  sur:{name:"El Sur",color:"#4E9C8F",text:"#1B1A1F",
+      blurb:"Spanish mixed with Zapoteco, Mixteco and Náhuatl.",
+      words:[["chapulines","toasted grasshoppers (from Náhuatl)"],["guelaguetza","giving back (from Zapoteco)"]],proud:"oaxaqueño"},
+  pen:{name:"La Península",color:"#2C5F57",text:"#FFF6E6",
+      blurb:"Maya words in everyday Spanish and a sing-song accent.",
+      words:[["xix","the leftover bits"],["tuch","belly button"]],proud:"meridano, yucateco"},
+  bajio:{name:"El Bajío",color:"#25232C",text:"#FFF6E6",soon:true,blurb:"Coming later."},
+  golfo:{name:"El Golfo",color:"#25232C",text:"#FFF6E6",soon:true,blurb:"Coming later, starting with jarocho Spanish from Veracruz."}
+};
+// [code, full name, zone, col, row]
+const S = [
+ ["BC","Baja California","norte",0,0],["SON","Sonora","norte",1,0],["CHIH","Chihuahua","norte",2,0],["COAH","Coahuila","norte",3,0],["NL","Nuevo León","norte",4,0],
+ ["BCS","Baja California Sur","norte",0,1],["SIN","Sinaloa","norte",1,1],["DGO","Durango","norte",2,1],["ZAC","Zacatecas","norte",3,1],["SLP","San Luis Potosí","bajio",4,1],["TAMS","Tamaulipas","norte",5,1],
+ ["NAY","Nayarit","occ",1,2],["AGS","Aguascalientes","bajio",2,2],["GTO","Guanajuato","bajio",3,2],["QRO","Querétaro","bajio",4,2],["HGO","Hidalgo","centro",5,2],["VER","Veracruz","golfo",6,3],["YUC","Yucatán","pen",8,3],
+ ["JAL","Jalisco","occ",1,3],["MICH","Michoacán","occ",2,3],["MEX","Estado de México","centro",3,3],["CDMX","Ciudad de México","centro",4,3],["TLAX","Tlaxcala","centro",5,3],["TAB","Tabasco","golfo",6,4],["CAMP","Campeche","pen",7,4],["QROO","Quintana Roo","pen",8,4],
+ ["COL","Colima","occ",1,4],["GRO","Guerrero","sur",3,4],["MOR","Morelos","centro",4,4],["PUE","Puebla","centro",5,4],["OAX","Oaxaca","sur",5,5],["CHIS","Chiapas","sur",6,5]
+];
+const r=27, w=Math.sqrt(3)*r, h=1.5*r, ox=w/2+4, oy=r+70;
+const pos=([,, ,c,row])=>[ox+c*w+(row%2?w/2:0), oy+row*h];
+let svg=`<svg viewBox="0 0 ${ox+9.4*w} ${oy+5*h+r+6}" role="img" aria-label="Tile map of Mexico's 32 states, colored by region, with a band for the US above the border">`;
+// US band
+svg+=`<g class="hex" data-z="us"><rect x="4" y="6" width="${9.2*w}" height="44" rx="10" fill="#FFF6E6"/><text x="${4.6*w}" y="33" text-anchor="middle" fill="#1B1A1F" style="font-size:14px">Mexican-American Spanish · the US</text></g>`;
+svg+=`<path d="M4 58 H${4+9.2*w}" stroke="#FFF6E6" stroke-width="1.5" stroke-dasharray="4 5" opacity=".6"/>`;
+const hexPts=(x,y)=>Array.from({length:6},(_,i)=>{const a=Math.PI/180*(60*i-30);return (x+(r-1.5)*Math.cos(a)).toFixed(1)+","+(y+(r-1.5)*Math.sin(a)).toFixed(1)}).join(" ");
+for(const s of S){const [x,y]=pos(s);const z=Z[s[2]];
+  svg+=`<g class="hex" data-z="${s[2]}" data-s="${s[0]}"><title>${s[1]}</title><polygon points="${hexPts(x,y)}" fill="${z.color}" stroke="${z.soon?'#FFF6E6':'#1B1A1F'}" stroke-width="${z.soon?1.2:2}" ${z.soon?'stroke-dasharray="3 3" stroke-opacity=".5"':''}/><text x="${x}" y="${y+4}" text-anchor="middle" fill="${z.text}">${s[0]}</text></g>`;}
+svg+=`</svg>`;
+document.getElementById('rm-map').innerHTML=svg;
+
+const order=["us","norte","occ","centro","sur","pen","bajio","golfo"];
+const legend=document.getElementById('rm-legend');
+legend.innerHTML=order.map(k=>`<li><button data-z="${k}" aria-pressed="false"><span class="sw" style="background:${Z[k].color};${Z[k].soon?'border:1.5px dashed #FFF6E6':''}"></span>${Z[k].name}${Z[k].soon?'<span class="soon">Coming later</span>':''}</button></li>`).join("");
+const detail=document.getElementById('rm-detail');
+function pick(k,stateCode){
+  const z=Z[k];const st=k==="us"?z.states:S.filter(s=>s[2]===k).map(s=>s[1]).join(", ");
+  const you=stateCode?`<p style="font-weight:800;color:var(--chispa)">${S.find(s=>s[0]===stateCode)[1]}</p>`:"";
+  detail.innerHTML=`${you}<h3>${z.name}</h3><p class="states">${st}</p><p>${z.blurb}</p>`+
+   (z.words?`<dl>${z.words.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl><p class="proud">They call themselves <b>${z.proud}</b></p>`:"");
+  document.getElementById('rm-map').classList.add('dim');
+  document.querySelectorAll('#rm-map .hex').forEach(g=>g.classList.toggle('on',g.dataset.z===k));
+  legend.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.z===k));
+}
+document.getElementById('rm-map').addEventListener('click',e=>{const g=e.target.closest('.hex');if(g)pick(g.dataset.z,g.dataset.s)});
+legend.addEventListener('click',e=>{const b=e.target.closest('button');if(b)pick(b.dataset.z)});
+const dlg=document.getElementById('rm');
+document.getElementById('rm-open').onclick=()=>{dlg.showModal();pick("sur","OAX")};
+document.getElementById('rm-close').onclick=()=>dlg.close();
+dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.close()});
+})();</script>
 </body>
 </html>
